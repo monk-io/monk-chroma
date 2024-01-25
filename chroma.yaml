@@ -1,0 +1,72 @@
+namespace: chroma
+
+chroma:
+  defines: runnable
+  metadata:
+    name: Chroma
+    shortname: Chroma
+    description: |
+      Chroma - the open-source embedding database.
+      The fastest way to build Python or JavaScript LLM apps with memory!
+    source: https://github.com/chroma-core/chroma
+    tags: LLM, AI, open source, database
+    publisher: monk.io
+  containers:
+    chroma:
+      image: ghcr.io/chroma-core/chroma:latest
+      bash: <- `uvicorn chromadb.app:app --reload --workers 1 --host 0.0.0.0 --port ${chroma_port} --log-config chromadb/log_config.yml --timeout-keep-alive 30`
+      ports:
+        - <- `${chroma_port}:${chroma_port}`
+      paths:
+        - <- `${monk-volume-path}/chroma:/chroma/chroma`
+  services:
+    chroma:
+      container: chroma
+      port: <- `${chroma_port}`
+      protocol: tcp
+      host-port: <- `${chroma_port}`
+      publish: true
+  variables:
+    is_persistent:
+      type: bool
+      value: true
+      env: IS_PERSISTENT
+    chroma_server_auth_provider:
+      type: string
+      value: ""
+      env: CHROMA_SERVER_AUTH_PROVIDER
+    chroma_server_auth_credentials_file:
+      type: string
+      value: ""
+      env: CHROMA_SERVER_AUTH_CREDENTIALS_FILE
+    chroma_server_auth_credentials:
+      type: string
+      value: ""
+      env: CHROMA_SERVER_AUTH_CREDENTIALS
+    chroma_server_auth_credentials_provider:
+      type: string
+      value: ""
+      env: CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER
+    persist_directory:
+      type: string
+      value: "/chroma/chroma"
+      env: PERSIST_DIRECTORY
+    chroma_otel_exporter_endpoint:
+      type: string
+      env: CHROMA_OTEL_EXPORTER_ENDPOINT
+    chroma_otel_exporter_headers:
+      type: string
+      env: CHROMA_OTEL_EXPORTER_HEADERS
+    chroma_otel_service_name:
+      type: string
+      env: CHROMA_OTEL_SERVICE_NAME
+    chroma_otel_granularity:
+      type: string
+      env: CHROMA_OTEL_GRANULARITY
+    chroma_server_nofile:
+      type: string
+      env: CHROMA_SERVER_NOFILE
+    chroma_port:
+      type: int
+      value: 8000
+      env: CHROMA_PORT

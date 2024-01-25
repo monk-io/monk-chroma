@@ -5,6 +5,7 @@ chroma:
   metadata:
     name: Chroma
     shortname: Chroma
+    icon: https://www.trychroma.com/chroma-logo.png
     description: |
       Chroma - the open-source embedding database.
       The fastest way to build Python or JavaScript LLM apps with memory!

@@ -1,0 +1,160 @@
+---
+title: Chroma
+description: Ready-to-run Chroma container template you can run directly or inherit to integrate a vector database for embeddings into your AI/ML stack.
+primary_category: database
+tags: [chroma, vector-database, embeddings, template, runnable, ai, ml, llm]
+integration_type: template
+hosting_models: [self-hosted]
+website_url: https://www.trychroma.com/
+docs_url: https://docs.trychroma.com/
+publisher: monk.io
+---
+
+## Overview
+
+This template provides a production‑ready Chroma instance as a Monk runnable. You can:
+
+- Run it directly to get a managed Chroma container with sensible defaults
+- Inherit it in your own runnable to seamlessly add a vector database for AI/ML embeddings to your stack
+
+Chroma is an open-source embedding database that makes it easy to build LLM applications by storing and querying embeddings with metadata. It's designed for AI applications that need semantic search, similarity matching, and contextual retrieval.
+
+## What this template manages
+
+- Chroma container (`ghcr.io/chroma-core/chroma:latest` image)
+- Network service on port 8000
+- Persistent volumes for vector data and embeddings storage
+- Optional authentication and observability configuration
+
+## Quick start (run directly)
+
+1) Load templates
+
+```bash
+monk load MANIFEST
+```
+
+2) Run Chroma with defaults
+
+```bash
+monk run chroma/chroma
+```
+
+3) Customize configuration (optional)
+
+Running directly uses the defaults defined in this template's `variables`. For custom configuration:
+
+- Preferred: inherit and override variables as shown below
+- Alternative: fork/clone and edit the `variables` in `chroma/chroma.yaml`, then `monk load MANIFEST` and run
+
+Once started, connect to `localhost:8000` (or the runnable hostname inside Monk networks) using the Chroma client library.
+
+## Configuration
+
+Key variables you can customize in this template:
+
+```yaml
+variables:
+  chroma_port: 8000                                    # HTTP API port
+  is_persistent: true                                  # enable data persistence
+  persist_directory: "/chroma/chroma"                  # container data path
+  chroma_server_auth_provider: ""                      # auth provider (e.g., chromadb.auth.basic.BasicAuthServerProvider)
+  chroma_server_auth_credentials: ""                   # auth credentials
+  chroma_server_auth_credentials_file: ""              # path to credentials file
+  chroma_server_auth_credentials_provider: ""          # credentials provider
+  chroma_otel_exporter_endpoint: ""                    # OpenTelemetry endpoint
+  chroma_otel_exporter_headers: ""                     # OTEL headers
+  chroma_otel_service_name: ""                         # OTEL service name
+  chroma_otel_granularity: ""                          # OTEL granularity
+  chroma_server_nofile: ""                             # file descriptor limit
+```
+
+Data is persisted under `${monk-volume-path}/chroma:/chroma/chroma` on the host.
+
+## Use by inheritance (recommended for AI/ML apps)
+
+Inherit the Chroma runnable in your AI/ML application and declare a connection. Example:
+
+```yaml
+namespace: myapp
+vectordb:
+  defines: runnable
+  inherits: chroma/chroma
+llm-app:
+  defines: runnable
+  containers:
+    app:
+      image: myorg/llm-app
+  connections:
+    vectors:
+      runnable: vectordb
+      service: chroma
+  variables:
+    chroma-host:
+      value: <- connection-hostname("vectors")
+    chroma-port:
+      value: "8000"
+```
+
+For authenticated setup:
+
+```yaml
+namespace: myapp
+vectordb:
+  defines: runnable
+  inherits: chroma/chroma
+  variables:
+    chroma_server_auth_provider:
+      value: <- secret("chroma-auth-provider")
+    chroma_server_auth_credentials:
+      value: <- secret("chroma-auth-credentials")
+```
+
+Then set the secrets and run:
+
+```bash
+monk secrets add -g chroma-auth-provider="chromadb.auth.basic.BasicAuthServerProvider"
+monk secrets add -g chroma-auth-credentials="admin:securepassword"
+monk run myapp/llm-app
+```
+
+## Ports and connectivity
+
+- Service: `chroma` on TCP port `8000`
+- From other runnables in the same process group, use `connection-hostname("<connection-name>")` to resolve the Chroma host
+
+## Persistence
+
+- Data path: `${monk-volume-path}/chroma:/chroma/chroma`
+- All collections, embeddings, and metadata are persisted to this volume when `is_persistent` is `true`
+
+## Use cases
+
+Chroma is ideal for:
+- Semantic search over documents
+- Question-answering systems with LLMs
+- Recommendation engines
+- Similarity matching
+- RAG (Retrieval-Augmented Generation) applications
+
+## Related templates
+
+- Use with LLM applications (`ollama/`, `openllm/`, `langfuse/`)
+- Combine with embedding models for semantic search
+- Integrate with RAG pipelines for enhanced AI responses
+
+## Troubleshooting
+
+- Ensure the host volumes are writable by the container user
+- Check logs:
+
+```bash
+monk logs -l 500 -f chroma/chroma
+```
+
+- Verify Chroma is responding:
+
+```bash
+curl http://localhost:8000/api/v1/heartbeat
+```
+

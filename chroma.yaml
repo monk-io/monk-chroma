@@ -16,17 +16,18 @@ chroma:
     chroma:
       image: ghcr.io/chroma-core/chroma:latest
       bash: <- `uvicorn chromadb.app:app --reload --workers 1 --host 0.0.0.0 --port ${chroma_port} --log-config chromadb/log_config.yml --timeout-keep-alive 30`
-      ports:
-        - <- `${chroma_port}:${chroma_port}`
-      paths:
-        - <- `${monk-volume-path}/chroma:/chroma/chroma`
+      mounted-volumes:
+        chroma-data:
+          path: /chroma/chroma
+  volumes:
+    chroma-data:
+      kind: local
   services:
     chroma:
       container: chroma
       port: <- `${chroma_port}`
       protocol: tcp
       host-port: <- `${chroma_port}`
-      publish: true
   variables:
     is_persistent:
       type: bool
